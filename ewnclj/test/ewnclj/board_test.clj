@@ -71,5 +71,25 @@
                           ["__" "__" "__" "__" "__"]
                           ["__" "__" "__" "__" "__"]],
                          {:x 2 :y 2 :augen 4})
-           empty-board)))
-  )
+           empty-board))))
+
+(deftest has-steine-test
+  (testing "has steine"
+    (is (= (has-steine board "b") true))
+    (is (= (has-steine board "o") true))
+    (is (= (has-steine empty-board "b") false))
+    (is (= (has-steine empty-board "o") false))))
+
+(deftest bget-stein-test
+  (testing "get stein"
+    (is (= (bget-stein board 0 0) {:augen 3 :owner "b" :x 0 :y 0}))
+    (is (= (bget-stein board 4 4) {:augen 3 :owner "o" :x 4 :y 4}))
+    (is (= (bget-stein board 2 2) nil))))
+
+(deftest other-corner-reached-test
+  (testing "other-corner"
+    (is (= (other-corner-reached board "b" "t") false))
+    (is (= (other-corner-reached board "b" "b") true))
+    (is (= (other-corner-reached board "o" "b") false))
+    (is (= (other-corner-reached board "o" "t") true))))
+

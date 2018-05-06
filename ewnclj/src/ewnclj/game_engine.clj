@@ -32,7 +32,17 @@
       :opponent-side opponent-side
       :board new-board)))
 
+(defn send-quit-when-winner-found [game-state]
+  (let [potential-winner (b/get-winner (game-state :board) (game-state :own-side) (game-state :opponent-side))]
+    (when (some? potential-winner)
+      (do
+        (println potential-winner "hat gewonnen!")
+        (net/send-command "quit"))
+      )
+    game-state))
+
 (defn do-opp-move [game-state stein wuerfel]
+  (send-quit-when-winner-found game-state)
   ; TODO use wuerfel to prevent cheating!
   (assoc game-state :board (b/move-stein (game-state :board) "o" stein)))
 
@@ -40,7 +50,8 @@
   (let [stein (ki/choose-move game-state wuerfel)]
     (net/send-command (str (stein :augen) (inc (stein :x)) (inc (stein :y))))
     (let [new-board (b/move-stein (game-state :board) "b" stein)]
-      (assoc game-state :board new-board))))
+      (send-quit-when-winner-found
+        (assoc game-state :board new-board)))))
 
 (defn handle-Z-command [response game-state]
   (if (= (response :sender) "Server")
@@ -94,6 +105,12 @@
       (= (response :code) "E102") (handle-E102-nick-in-used response game-state)
       (= (response :code) "E302") (net/shutdown-network)
       )))
+
+; add shoutdown hook
+;Runtime.getRuntime().addShutdownHook(Thread {
+;                                             launch { netOut.send(Logout) }
+;                                             Thread.sleep(200)
+;                                             })
 
 (defn start-engine []
   (loop [game-state c/initial-game-state]

@@ -1,6 +1,7 @@
 (ns ewnclj.board
   (:require [clojure.string :as str]
-            [ewnclj.config :as c]))
+            [ewnclj.config :as c]
+            [ewnclj.parser :as p]))
 
 (defn has-players [board]
   (some? (first (filter #(not= ewnclj.config/blank %) (flatten board)))))
@@ -11,11 +12,6 @@
     (let [[owner augen] (str/split feld #"")]
       {:owner owner
        :augen (Integer/parseInt augen)})))
-
-(defn parse-stein [stein]
-  "Parses 513 to {:augen 5, :x 0, :y 2}"
-  (let [[augen x y] (mapv #(Integer/parseInt %) (str/split stein #""))]
-    {:augen augen :x (dec x) :y (dec y)}))
 
 (defn is-top-half
   ([x y]
@@ -34,8 +30,14 @@
                      (assoc board y new-row)))
   ([board owner stein] (bset board (stein :x) (stein :y) (str owner (stein :augen)))))
 
-(defn bget [board x y]
+(defn bget-field [board x y]
   (get-in board [x y]))
+
+(defn bget-stein [board x y]
+  (let [feld (parse-feld (bget-field board x y))]
+    (if feld
+      (assoc feld :x x :y y)
+      nil)))
 
 (defn get-steine
   ([board] "Liefert die Steine in der From {:owner \"b\" :x 2 :y 2 :augen 4} auf Board"
@@ -63,3 +65,25 @@
   (bset (remove-stein board (find-stein board owner (stein :augen)))
         owner
         stein))
+
+(defn has-steine [board owner]
+  (not (empty? (get-steine board owner))))
+
+(defn other-corner-reached [board who start-side]
+  (if (= start-side "t")
+    (let [stein (bget-stein board 4 4)]
+      (if (some? stein)
+        (= (stein :owner) who)
+        false))
+    (let [stein (bget-stein board 0 0)]
+      (if stein
+        (= (stein :owner) who)
+        false))
+    ))
+
+(defn get-winner [board bot-side opp-side]
+  (cond
+    (not (has-steine board "b")) "o"
+    (not (has-steine board "o")) "b"
+    (other-corner-reached board "b" bot-side) "b"
+    (other-corner-reached board "o" opp-side) "o"))
