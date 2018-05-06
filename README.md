@@ -1,4 +1,9 @@
-# ewn
+# ewn clojure bot
+Ein Bot der hoffentlich die Kollegen bei einstein würfelt nicht schlägt. :)
+
+Mein Beitrag zu einer internen Challenge mit dem Ziel Clojure zu lernen
+
+# ewn 
 einstein würfelt nicht spiel
 
 https://de.wikipedia.org/wiki/EinStein_w%C3%BCrfelt_nicht
@@ -20,26 +25,27 @@ Befehle:
 - werBinIch (lol)
 - spiel <gegner>
 
+
 Server Response Codes ( reverse engineered ):
-    Success("B"),
-    Message("M"),
-    Move("Z"),
-    GameRequest("Q"),
-    UnknownCommand("E001"),
-    LoginRequest("E101"),
-    NameConflict("E102"),
-    LoginNameMissing("E103"),
-    AlreadyLoggedIn("E104"),
-    GameRequestRejected("E201"),
-    RequestNameMissing("E202"),
-    PlayerNotFound("E203"),
-    PlayerNotAvailable("E204"),
-    SelfRequestForbidden("E205"),
-    GameRequestPending("206"),
-    AlreadyRequested("E207"),
-    Cancelled("E208"),
-    MoveTimout("E301"),
-    IdleTimeout("E302"),
-    GameRequestTimeout("E303")
+- Success("B"),
+- Message("M"),
+- Move("Z"),
+- GameRequest("Q"),
+- UnknownCommand("E001"),
+- LoginRequest("E101"),
+- NameConflict("E102"),
+- LoginNameMissing("E103"),
+- AlreadyLoggedIn("E104"),
+- GameRequestRejected("E201"),
+- RequestNameMissing("E202"),
+- PlayerNotFound("E203"),
+- PlayerNotAvailable("E204"),
+- SelfRequestForbidden("E205"),
+- GameRequestPending("206"),
+- AlreadyRequested("E207"),
+- Cancelled("E208"),
+- MoveTimout("E301"),
+- IdleTimeout("E302"),
+- GameRequestTimeout("E303")
     
 Server :  vpf.mind-score.de 1078
