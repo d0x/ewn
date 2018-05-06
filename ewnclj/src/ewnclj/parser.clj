@@ -4,8 +4,12 @@
 
 (defn parse-response [raw-response]
   "Zerlegt den raw-response in sender, code und message"
-  (let [[full sender wuerfel code message] (re-matches #"(.*?) (.Würfel:.* )?(.*?)> (.*)" raw-response)]
-    {:raw raw-response :sender sender :wuerfel wuerfel :code code :message message}))
+  (let [[full sender wuerfel code message] (re-matches #"(.*?) (?:\(Würfel: (\d)\) )?(.*?)> (.*)" raw-response)]
+    {:raw     raw-response
+     :sender  sender
+     :wuerfel (if (nil? wuerfel) nil (Integer/parseInt wuerfel))
+     :code    code
+     :message message}))
 
 (defn parse-aufstellung [aufstellung]
   "Macht aus 311 512 113 221 422 631 ein Vektor aus steinen"

@@ -8,9 +8,6 @@
             [ewnclj.board :as b]))
 
 ; ----- Acting to responses
-(defn apply-startaufstellung [game-state]
-  game-state)
-
 (defn do-own-startaufstellung [game-state]
   (let [own-side (if (= (game-state :opponent-side) "t") "b" "t")
         aufstellung (ki/choose-startaufstellung game-state own-side)
@@ -24,7 +21,6 @@
       :own-side own-side
       :board new-board)))
 
-
 (defn do-opponent-startaufstellung [game-state aufstellung]
   (let [steine (p/parse-aufstellung aufstellung)
         opponent-side (if (b/is-top-half (get steine 0)) "t" "b")
@@ -36,7 +32,7 @@
       :opponent-side opponent-side
       :board new-board)))
 
-(defn move [game-state]
+(defn move [game-state wuerfel]
   game-state)
 
 (defn handle-Z-command [response game-state]
@@ -45,7 +41,7 @@
       (= (response :message) "Sie sind am Zug") game-state
       (str/starts-with? (response :message) "Zug an ") game-state
       (str/starts-with? (response :message) "Würfel:") (if (:own-side game-state)
-                                                         (move game-state)
+                                                         (move game-state (response :wuerfel))
                                                          (do-own-startaufstellung game-state))
       :else (println "Unhandled Response: " (response :raw)))
     (if (game-state :opponent-side)
@@ -67,7 +63,7 @@
 
 (defn handle-Q-command [response game-state]
   "Akzeptiert jeden game-state Request"
-  (let [opponent-name (p/parse-opponent-name (response :message))]
+  (let [opponent-name (p/parse-opponent-name response)]
     (net/send-command "Ja")
     (assoc game-state :opponent-name opponent-name)))
 
@@ -97,4 +93,3 @@
         (pp/pprint (new-game-state :board))
         (Thread/sleep 2000)
         (recur new-game-state)))))
-
