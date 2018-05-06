@@ -5,7 +5,6 @@
   (map #(% :augen) steine))
 
 (defn moegliche-augen [wuerfel augen]
-  (println "Wuerfel: " wuerfel " Augen " augen)
   (let [res (some #{wuerfel} augen)]
     (if (some? res)
       [res]

@@ -1,6 +1,6 @@
 (ns ewnclj.parser-test
   (:require [clojure.test :refer :all])
-  (:require [ewnclj.parser :refer [parse-response]]))
+  (:require [ewnclj.parser :refer :all]))
 
 (deftest parse-response-test
   (testing "Simple message"
@@ -15,3 +15,7 @@
                                                             :raw     "Server (Würfel: 2) Z> Foobar"
                                                             :sender  "Server"
                                                             :wuerfel 2}))))
+
+(deftest parse-stein-test
+  (testing "steine parsen"
+    (is (= (parse-stein "523") {:augen 5 :x 1 :y 2}))))

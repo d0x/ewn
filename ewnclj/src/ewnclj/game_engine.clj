@@ -32,14 +32,15 @@
       :opponent-side opponent-side
       :board new-board)))
 
+(defn do-opp-move [game-state stein wuerfel]
+  ; TODO use wuerfel to prevent cheating!
+  (assoc game-state :board (b/move-stein (game-state :board) "o" stein)))
+
 (defn do-own-move [game-state wuerfel]
   (let [stein (ki/choose-move game-state wuerfel)]
-    (net/send-command (str (stein :augen) (stein :x) (stein :y)))
+    (net/send-command (str (stein :augen) (inc (stein :x)) (inc (stein :y))))
     (let [new-board (b/move-stein (game-state :board) "b" stein)]
       (assoc game-state :board new-board))))
-
-(defn move [game-state wuerfel]
-  game-state)
 
 (defn handle-Z-command [response game-state]
   (if (= (response :sender) "Server")
@@ -50,9 +51,11 @@
                                                           (do-own-move game-state (Integer/parseInt (str/replace (response :message) "Würfel: " "")))
                                                           (do-own-startaufstellung game-state))
       :else (println "Unhandled Response: " (response :raw)))
-    (if (game-state :opponent-side)
-      (move game-state (response :wuerfel))
-      (do-opponent-startaufstellung game-state (response :message)))))
+    ; Messages from opponent
+    (cond
+      (nil? (game-state :opponent-side)) (do-opponent-startaufstellung game-state (response :message))
+      (some? (re-matches #"\d{3}" (response :message))) (do-opp-move game-state (p/parse-stein (response :message)) (response :wuerfel))
+      :else (println "Unhandled Response: " (response :raw)))))
 
 (defn handle-B-command [response game-state]
   "B - success"

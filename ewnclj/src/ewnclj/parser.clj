@@ -19,3 +19,8 @@
   "Ließt den Namen aus: chris moechte gegen Sie spielen. o.k.? (Ja/Nein)"
   (let [[full opponent rest] (re-matches #"(.*?) (.*)" (response :message))]
     opponent))
+
+(defn parse-stein [message]
+  "Macht aus 522 einen Stein {:augen 5 :x 1 :y 1}"
+  (let [[augen x y] (map #(Integer/parseInt %) (str/split message #""))]
+    {:augen augen :x (dec x) :y (dec y)}))
