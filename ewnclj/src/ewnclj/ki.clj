@@ -15,3 +15,5 @@
     c/bot-player-setup)
   )
 
+(defn choose-move [game-state wuerfel]
+  )
