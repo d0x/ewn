@@ -84,11 +84,11 @@
     (cond
       (= (response :code) "B") (handle-B-command response game-state)
       (= (response :code) "Q") (handle-Q-command response game-state)
-      (= (response :code) "Z") (handle-Z-command response game-state))
-    (= (response :code) "M") (handle-M-command response game-state)
-    (= (response :code) "E102") (handle-E102-nick-in-used response game-state)
-    (= (response :code) "E302") (net/shutdown-network)
-    ))
+      (= (response :code) "Z") (handle-Z-command response game-state)
+      (= (response :code) "M") (handle-M-command response game-state)
+      (= (response :code) "E102") (handle-E102-nick-in-used response game-state)
+      (= (response :code) "E302") (net/shutdown-network)
+      )))
 
 (defn start-engine []
   (loop [game-state c/initial-game-state]

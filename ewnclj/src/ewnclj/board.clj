@@ -17,7 +17,8 @@
   ([stein]
    (is-top-half (stein :x) (stein :y))))
 
-(defn ausgangspunkt-startaufstellung [steine]
+(defn get-startaufstellung-side [steine]
+  "Prüft ob die übergebene Startaufstellung oben (t) oder unten (b) angeordnet ist"
   (let [ersterStein (get steine 0)]
     (if (is-top-half (ersterStein :x) (ersterStein :y)) "t" "b")))
 
