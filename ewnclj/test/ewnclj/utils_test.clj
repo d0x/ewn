@@ -20,3 +20,24 @@
     (is (= (moegliche-augen 4 '(5 6)) '(5)))
     (is (= (moegliche-augen 4 '(1 2 3 5 6)) '(5 3)))
     (is (= (moegliche-augen 4 '()) '()))))
+
+(deftest moegliche-steine-test
+  (testing "moegliche steine"
+    (is (= (moegliche-steine 4 [{:augen 3}
+                                {:augen 5}
+                                ])
+           '({:augen 5}
+              {:augen 3}
+              )))))
+
+(deftest moegliche-zuege-test
+  (testing "moegliche zuege für einen stein"
+    (is (= (moegliche-zuege "t" {:x 4 :y 4}) '()))
+    (is (= (moegliche-zuege "t" {:x 4 :y 0}) '({:x 4 :y 1})))
+    (is (= (moegliche-zuege "t" {:x 0 :y 4}) '({:x 1 :y 4})))
+    (is (= (moegliche-zuege "t" {:x 0 :y 0}) '({:x 1 :y 0} {:x 0 :y 1} {:x 1 :y 1})))
+
+    (is (= (moegliche-zuege "b" {:x 0 :y 0}) '()))
+    (is (= (moegliche-zuege "b" {:x 0 :y 4}) '({:x 0 :y 3})))
+    (is (= (moegliche-zuege "b" {:x 4 :y 0}) '({:x 3 :y 0})))
+    (is (= (moegliche-zuege "b" {:x 4 :y 4}) '({:x 3 :y 4} {:x 4 :y 3} {:x 3 :y 3})))))

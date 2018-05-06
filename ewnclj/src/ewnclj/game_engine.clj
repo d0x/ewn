@@ -35,7 +35,7 @@
 (defn do-own-move [game-state wuerfel]
   (let [stein (ki/choose-move game-state wuerfel)]
     (net/send-command (str (stein :augen) (stein :x) (stein :y)))
-    (let [new-board (b/move-stein (game-state :board) (game-state :own-side) stein)]
+    (let [new-board (b/move-stein (game-state :board) "b" stein)]
       (assoc game-state :board new-board))))
 
 (defn move [game-state wuerfel]
@@ -46,9 +46,9 @@
     (cond
       (= (response :message) "Sie sind am Zug") game-state
       (str/starts-with? (response :message) "Zug an ") game-state
-      (str/starts-with? (response :message) "Würfel:") (if (:own-side game-state)
-                                                         (do-own-move game-state (response :wuerfel))
-                                                         (do-own-startaufstellung game-state))
+      (str/starts-with? (response :message) "Würfel: ") (if (:own-side game-state)
+                                                          (do-own-move game-state (Integer/parseInt (str/replace (response :message) "Würfel: " "")))
+                                                          (do-own-startaufstellung game-state))
       :else (println "Unhandled Response: " (response :raw)))
     (if (game-state :opponent-side)
       (move game-state (response :wuerfel))
@@ -97,5 +97,5 @@
     (if (net/network-connected)
       (let [new-game-state (handle-response (net/read-response) game-state)]
         (pp/pprint (new-game-state :board))
-        (Thread/sleep 2000)
+        (Thread/sleep 1000)
         (recur new-game-state)))))
