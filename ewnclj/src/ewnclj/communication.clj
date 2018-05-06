@@ -3,7 +3,6 @@
   (:import (java.io InputStreamReader PrintWriter BufferedReader)
            (java.net Socket)))
 
-
 (def socket (new Socket c/hostname 1078))
 (def out (new PrintWriter (.getOutputStream socket) true))
 (def br (new BufferedReader (new InputStreamReader (.getInputStream socket))))

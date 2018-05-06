@@ -19,9 +19,7 @@
 
 (defn ausgangspunkt-startaufstellung [steine]
   (let [ersterStein (get steine 0)]
-    (if (is-top-half (ersterStein :x) (ersterStein :y)) "t" "b"))
-
-  )
+    (if (is-top-half (ersterStein :x) (ersterStein :y)) "t" "b")))
 
 (defn bset
   ([board x y val] (let [new-row (assoc (get board y) x val)]

@@ -72,7 +72,7 @@
     (assoc game-state :opponent-name opponent-name)))
 
 (defn handle-E102-nick-in-used [response game-state]
-  (let [new-name (ki/choose-next-name (game-state :botname))]
+  (let [new-name (ki/choose-next-nick-name (game-state :botname))]
     (net/send-command (str "login " new-name))
     (assoc game-state :botname new-name)))
 
