@@ -32,7 +32,7 @@
 (defn bset
   ([board x y val] (let [new-row (assoc (get board y) x val)]
                      (assoc board y new-row)))
-  ([board who stein] (bset board (stein :x) (stein :y) (str who (stein :augen)))))
+  ([board owner stein] (bset board (stein :x) (stein :y) (str owner (stein :augen)))))
 
 (defn bget [board x y]
   (get-in board [x y]))
