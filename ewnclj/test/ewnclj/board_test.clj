@@ -1,7 +1,8 @@
 (ns ewnclj.board-test
   (:require [clojure.test :refer :all])
   (:require [ewnclj.board :refer :all]
-            [ewnclj.config :as c]))
+            [ewnclj.config :as c]
+            [clojure.string :as str]))
 
 (def board [["b3" "b2" "b6" "__" "__"]
             ["b5" "b4" "__" "__" "__"]
@@ -93,3 +94,6 @@
     (is (= (other-corner-reached board "o" "b") false))
     (is (= (other-corner-reached board "o" "t") true))))
 
+(deftest print-board-test
+  (testing "printboard"
+    (is (= (print-board board)))))

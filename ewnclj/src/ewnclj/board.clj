@@ -87,3 +87,15 @@
     (not (has-steine board "o")) "b"
     (other-corner-reached board "b" bot-side) "b"
     (other-corner-reached board "o" opp-side) "o"))
+
+(def replacements {#"b"  "🤖"
+                   #"o"  "🤓"
+                   #"__" "⬜(_)"
+                   #"\d" "($0)"
+                   })
+
+(defn print-board [board]
+  (doseq [row board]
+    (doseq [field row]
+      (print (reduce #(apply str/replace %1 %2) field replacements) " "))
+    (println)))

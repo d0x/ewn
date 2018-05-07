@@ -115,6 +115,6 @@
       (let [raw-response (net/read-response)
             new-game-state (handle-response raw-response game-state)]
         (when (not= (new-game-state :board) (game-state :board))
-          (pp/pprint (new-game-state :board)))
+          (b/print-board (new-game-state :board)))
         (Thread/sleep 1000)
         (recur new-game-state)))))
