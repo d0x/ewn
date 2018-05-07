@@ -17,6 +17,7 @@
   (.println out message))
 
 (defn shutdown-network []
+  (println "Closing Socket...")
   (.close socket))
 
 (defn network-connected []

@@ -61,12 +61,12 @@
       (str/starts-with? (response :message) "Würfel: ") (if (:own-side game-state)
                                                           (do-own-move game-state (Integer/parseInt (str/replace (response :message) "Würfel: " "")))
                                                           (do-own-startaufstellung game-state))
-      :else (println "Unhandled Response: " (response :raw)))
+      :else (do (println "Unhandled Response: " (response :raw)) game-state))
     ; Messages from opponent
     (cond
       (nil? (game-state :opponent-side)) (do-opponent-startaufstellung game-state (response :message))
       (some? (re-matches #"\d{3}" (response :message))) (do-opp-move game-state (p/parse-stein (response :message)) (response :wuerfel))
-      :else (println "Unhandled Response: " (response :raw)))))
+      :else (do (println "Unhandled Response: " (response :raw)) game-state))))
 
 (defn handle-B-command [response game-state]
   "B - success"
@@ -79,13 +79,13 @@
         (= (:message response) "disconnect") (net/shutdown-network)
         :else (net/send-command "logout"))
       game-state)
-    (throw (IllegalStateException. "Not implemented"))))
+    (do (println "Unhandled Response: " (response :raw)) game-state)))
 
 (defn handle-Q-command [response game-state]
   "Akzeptiert jeden game-state Request"
   (let [opponent-name (p/parse-opponent-name response)]
     (net/send-command "Ja")
-    (assoc game-state :opponent-name opponent-name)))
+    (assoc c/initial-game-state :botname (game-state :botname) :opponent-name opponent-name)))
 
 (defn handle-E102-nick-in-used [response game-state]
   (let [new-name (ki/choose-next-nick-name (game-state :botname))]
@@ -94,23 +94,27 @@
 
 (defn handle-M-command [response game-state] game-state)
 
+(defn handle-E001-unkown-command [response game-state] game-state)
+
 (defn handle-response [raw-response game-state]
   (let [response (p/parse-response raw-response)]
-    ;(println "response: " response)
     (cond
       (= (response :code) "B") (handle-B-command response game-state)
       (= (response :code) "Q") (handle-Q-command response game-state)
       (= (response :code) "Z") (handle-Z-command response game-state)
       (= (response :code) "M") (handle-M-command response game-state)
+      (= (response :code) "E001") (handle-E001-unkown-command response game-state)
       (= (response :code) "E102") (handle-E102-nick-in-used response game-state)
-      (= (response :code) "E302") (net/shutdown-network)
-      )))
+      (= (response :code) "E302") (do (net/shutdown-network) game-state)
+      :else (do (println "Unkown code" (response :code) "in Response:" (response :raw)) game-state))))
 
 (defn start-engine []
   (.addShutdownHook (Runtime/getRuntime) (Thread. #(when (net/network-connected) (net/send-command "logout"))))
   (loop [game-state c/initial-game-state]
     (if (net/network-connected)
-      (let [new-game-state (handle-response (net/read-response) game-state)]
-        (pp/pprint (new-game-state :board))
+      (let [raw-response (net/read-response)
+            new-game-state (handle-response raw-response game-state)]
+        (when (not= (new-game-state :board) (game-state :board))
+          (pp/pprint (new-game-state :board)))
         (Thread/sleep 1000)
         (recur new-game-state)))))
