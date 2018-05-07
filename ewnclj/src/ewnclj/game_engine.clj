@@ -106,13 +106,8 @@
       (= (response :code) "E302") (net/shutdown-network)
       )))
 
-; add shoutdown hook
-;Runtime.getRuntime().addShutdownHook(Thread {
-;                                             launch { netOut.send(Logout) }
-;                                             Thread.sleep(200)
-;                                             })
-
 (defn start-engine []
+  (.addShutdownHook (Runtime/getRuntime) (Thread. #(when (net/network-connected) (net/send-command "logout"))))
   (loop [game-state c/initial-game-state]
     (if (net/network-connected)
       (let [new-game-state (handle-response (net/read-response) game-state)]
