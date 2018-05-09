@@ -68,17 +68,28 @@
       (some? (re-matches #"\d{3}" (response :message))) (do-opp-move game-state (p/parse-stein (response :message)) (response :wuerfel))
       :else (do (println "Unhandled Response: " (response :raw)) game-state))))
 
+(defn challenge-opponent-if-present [response game-state]
+  (let [opponent-to-challenge (game-state :opponent-to-challenge)]
+    (when opponent-to-challenge
+      (if (some #{opponent-to-challenge} (p/parse-player-list response))
+        (net/send-command (str "spiel " opponent-to-challenge))
+        (do
+          (Thread/sleep 1000)
+          (net/send-command "liste")
+          )))
+    game-state))
+
 (defn handle-B-command [response game-state]
   "B - success"
   (if (= (:sender response) "Server")
-    (do
-      (cond
-        (= (:message response) "Verbindung zum Server erstellt") (net/send-command (str "login " (game-state :botname)))
-        (= (:message response) (str (game-state :botname) ", Sie sind angemeldet")) (println "Waiting for game-state requests")
-        (= (:message response) "Spiel startet") game-state
-        (= (:message response) "disconnect") (net/shutdown-network)
-        :else (net/send-command "logout"))
-      game-state)
+    (cond
+      (= (response :message) "Verbindung zum Server erstellt") (do (net/send-command (str "login " (game-state :botname))) game-state)
+      (= (response :message) (str (game-state :botname) ", Sie sind angemeldet")) (do (net/send-command "liste") (println "Waiting for game-state requests") game-state)
+      (= (response :message) "Spiel startet") game-state
+      (= (response :message) (str (game-state :opponent-to-challenge) " akzeptiert")) game-state
+      (str/starts-with? (response :message) "Folgende Spieler waeren bereit zu spielen:") (challenge-opponent-if-present response game-state)
+      (= (response :message) "disconnect") (do (net/shutdown-network) game-state)
+      :else (do (println "Unhandled Response: " response :raw) (net/send-command "logout") game-state))
     (do (println "Unhandled Response: " (response :raw)) game-state)))
 
 (defn handle-Q-command [response game-state]
@@ -104,17 +115,22 @@
       (= (response :code) "Z") (handle-Z-command response game-state)
       (= (response :code) "M") (handle-M-command response game-state)
       (= (response :code) "E001") (handle-E001-unkown-command response game-state)
+      (= (response :code) "E201") (do (net/send-command "logout") (net/shutdown-network) game-state)
       (= (response :code) "E102") (handle-E102-nick-in-used response game-state)
       (= (response :code) "E302") (do (net/shutdown-network) game-state)
       :else (do (println "Unkown code" (response :code) "in Response:" (response :raw)) game-state))))
 
-(defn start-engine []
-  (.addShutdownHook (Runtime/getRuntime) (Thread. #(when (net/network-connected) (net/send-command "logout"))))
-  (loop [game-state c/initial-game-state]
-    (if (net/network-connected)
-      (let [raw-response (net/read-response)
-            new-game-state (handle-response raw-response game-state)]
-        (when (not= (new-game-state :board) (game-state :board))
-          (b/print-board (new-game-state :board)))
-        (Thread/sleep 1000)
-        (recur new-game-state)))))
+(defn start-engine
+  ([] (start-engine nil))
+  ([opponent-to-challenge]
+   (.addShutdownHook (Runtime/getRuntime) (Thread. #(when (net/network-connected) (net/send-command "logout"))))
+   (loop [game-state (assoc c/initial-game-state :opponent-to-challenge opponent-to-challenge)]
+     (if (net/network-connected)
+       (let [raw-response (net/read-response)
+             new-game-state (handle-response raw-response game-state)]
+         (when (not=
+                 (new-game-state :board)
+                 (game-state :board))
+           (b/print-board (new-game-state :board)))
+         (Thread/sleep 1000)
+         (recur new-game-state))))))

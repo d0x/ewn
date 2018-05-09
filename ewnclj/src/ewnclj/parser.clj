@@ -23,3 +23,10 @@
   "Ließt den Namen aus: chris moechte gegen Sie spielen. o.k.? (Ja/Nein)"
   (let [[full opponent rest] (re-matches #"(.*?) (.*)" (response :message))]
     opponent))
+
+(defn parse-player-list [response]
+  "Liefert die Spieler [cb cb1] aus Server B> Folgende Spieler waeren bereit zu spielen: cb  cb1"
+  (let [[full list] (re-matches #"(?:.*?:) (.*)" (response :message))]
+    (if (= list "Sonst keiner da!")
+      '()
+      (str/split list #" "))))

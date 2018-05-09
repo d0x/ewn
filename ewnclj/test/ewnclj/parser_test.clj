@@ -19,3 +19,8 @@
 (deftest parse-stein-test
   (testing "steine parsen"
     (is (= (parse-stein "523") {:augen 5 :x 1 :y 2}))))
+
+(deftest parse-player-list-test
+  (testing "liste parsen"
+    (is (= (parse-player-list {:message "Server B> Folgende Spieler waeren bereit zu spielen: Sonst keiner da!"}) '()))
+    (is (= (parse-player-list {:message "Server B> Folgende Spieler waeren bereit zu spielen: cb cb1"}) '("cb" "cb1")))))
