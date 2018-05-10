@@ -5,7 +5,8 @@
             [ewnclj.ki :as ki]
             [ewnclj.parser :as p]
             [ewnclj.communication :as net]
-            [ewnclj.board :as b]))
+            [ewnclj.board :as b]
+            [clojure.core.match :refer (match)]))
 
 ; ----- Acting to responses
 (defn do-own-startaufstellung [game-state]
@@ -87,8 +88,8 @@
       (= (response :message) (str (game-state :botname) ", Sie sind angemeldet")) (do (net/send-command "liste") (println "Waiting for game-state requests") game-state)
       (= (response :message) "Spiel startet") game-state
       (= (response :message) (str (game-state :opponent-to-challenge) " akzeptiert")) game-state
-      (str/starts-with? (response :message) "Folgende Spieler waeren bereit zu spielen:") (challenge-opponent-if-present response game-state)
       (= (response :message) "disconnect") (do (net/shutdown-network) game-state)
+      (str/starts-with? (response :message) "Folgende Spieler waeren bereit zu spielen:") (challenge-opponent-if-present response game-state)
       :else (do (println "Unhandled Response: " response :raw) (net/send-command "logout") game-state))
     (do (println "Unhandled Response: " (response :raw)) game-state)))
 
@@ -109,16 +110,16 @@
 
 (defn handle-response [raw-response game-state]
   (let [response (p/parse-response raw-response)]
-    (cond
-      (= (response :code) "B") (handle-B-command response game-state)
-      (= (response :code) "Q") (handle-Q-command response game-state)
-      (= (response :code) "Z") (handle-Z-command response game-state)
-      (= (response :code) "M") (handle-M-command response game-state)
-      (= (response :code) "E001") (handle-E001-unkown-command response game-state)
-      (= (response :code) "E201") (do (net/send-command "logout") (net/shutdown-network) game-state)
-      (= (response :code) "E102") (handle-E102-nick-in-used response game-state)
-      (= (response :code) "E302") (do (net/shutdown-network) game-state)
-      :else (do (println "Unkown code" (response :code) "in Response:" (response :raw)) game-state))))
+    (match response
+           {:code "B"} (handle-B-command response game-state)
+           {:code "Q"} (handle-Q-command response game-state)
+           {:code "Z"} (handle-Z-command response game-state)
+           {:code "M"} (handle-M-command response game-state)
+           {:code "E001"} (handle-E001-unkown-command response game-state)
+           {:code "E201"} (do (net/send-command "logout") (net/shutdown-network) game-state)
+           {:code "E102"} (handle-E102-nick-in-used response game-state)
+           {:code "E302"} (do (net/shutdown-network) game-state)
+           :else (do (println "Unkown code" (response :code) "in Response:" (response :raw)) game-state))))
 
 (defn start-engine
   ([] (start-engine nil))
