@@ -3,23 +3,28 @@
   (:import (java.io InputStreamReader PrintWriter BufferedReader)
            (java.net Socket)))
 
-(def socket (new Socket c/hostname 1078))
-(def out (new PrintWriter (.getOutputStream socket) true))
-(def br (new BufferedReader (new InputStreamReader (.getInputStream socket))))
-
-(defn read-response []
-  (let [response (.readLine br)]
+(defn read-response [network]
+  (let [response (.readLine (network :br))]
     (println "RECV: " response)
     response))
 
-(defn send-command [message]
+(defn send-command [network message]
   (println "SEND: " message)
-  (.println out message))
+  (.println (network :out) message))
 
-(defn shutdown-network []
+(defn shutdown-network [network]
   (println "Closing Socket...")
-  (.close socket))
+  (.close (network :socket)))
 
-(defn network-connected []
-  (not (.isClosed socket)))
+(defn network-connected [network]
+  (not (.isClosed (network :socket))))
 
+(defn connect [host]
+  (let [socket (new Socket host 1078)
+        out (new PrintWriter (.getOutputStream socket) true)
+        br (new BufferedReader (new InputStreamReader (.getInputStream socket)))]
+    {:socket socket
+     :out    out
+     :br     br}
+    )
+  )

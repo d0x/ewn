@@ -1,10 +1,19 @@
-# ewnclj
-
-A Clojure library designed to ... well, that part is up to you.
+# EinStein Würfelt nicht Clojure Bot
 
 ## Usage
 
-FIXME
+Start the first bot with
+```
+lein run --name ClojureBot --sleep 100
+```
+It will wait for incomming game requests.
+
+Now start the second bot with
+```
+lein run --name challanger -sleep 100 --opponent ClojureBot
+```
+
+To play on the official server use the `--host vpf.mind-score.de` option.
 
 ## License
 
