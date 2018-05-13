@@ -37,16 +37,16 @@
 (defn send-quit-when-winner-found [game-state network]
   (let [potential-winner (b/get-winner (game-state :board) (game-state :own-side) (game-state :opponent-side))]
     (when (some? potential-winner)
-      (do
-        (println potential-winner "hat gewonnen!")
-        (net/send-command network "quit"))
-      )
-    game-state))
+      (println (if (= potential-winner "b") (game-state :botname) (game-state :opponent-name)) "hat gewonnen!")
+      (when (= "b" potential-winner)
+        (net/send-command network "quit")))
+    (assoc game-state :winner potential-winner)))
 
 (defn do-opp-move [game-state stein wuerfel network]
-  (send-quit-when-winner-found game-state network)
   ; TODO use wuerfel to prevent cheating!
-  (assoc game-state :board (b/move-stein (game-state :board) "o" stein)))
+  (send-quit-when-winner-found
+    (assoc game-state :board (b/move-stein (game-state :board) "o" stein))
+    network))
 
 (defn do-own-move [game-state wuerfel network ki]
   (let [stein ((ki :choose-move) game-state wuerfel)]
@@ -55,30 +55,30 @@
       (send-quit-when-winner-found (assoc game-state :board new-board) network))))
 
 (defn handle-Z-command [response game-state network ki]
-  (if (= (response :sender) "Server")
-    (cond
-      (= (response :message) "Sie sind am Zug") game-state
-      (str/starts-with? (response :message) "Zug an ") game-state
-      (str/starts-with? (response :message) "Würfel: ") (if (:own-side game-state)
-                                                          (do-own-move game-state (Integer/parseInt (str/replace (response :message) "Würfel: " "")) network ki)
-                                                          (do-own-startaufstellung game-state network))
-      :else (do (println "Unhandled Response: " (response :raw)) game-state))
-    ; Messages from opponent
-    (cond
-      (nil? (game-state :opponent-side)) (do-opponent-startaufstellung game-state (response :message))
-      (some? (re-matches #"\d{3}" (response :message))) (do-opp-move game-state (p/parse-stein (response :message)) (response :wuerfel) network)
-      :else (do (println "Unhandled Response: " (response :raw)) game-state))))
+  (if-not (some? (game-state :winner))
+    (if (= (response :sender) "Server")
+      (cond
+        (= (response :message) "Sie sind am Zug") game-state
+        (str/starts-with? (response :message) "Zug an ") game-state
+        (str/starts-with? (response :message) "Würfel: ") (if (:own-side game-state)
+                                                            (do-own-move game-state (Integer/parseInt (str/replace (response :message) "Würfel: " "")) network ki)
+                                                            (do-own-startaufstellung game-state network))
+        :else (do (println "Unhandled Response: " (response :raw)) game-state))
+      ; Messages from opponent
+      (cond
+        (nil? (game-state :opponent-side)) (do-opponent-startaufstellung game-state (response :message))
+        (some? (re-matches #"\d{3}" (response :message))) (do-opp-move game-state (p/parse-stein (response :message)) (response :wuerfel) network)
+        :else (do (println "Unhandled Response: " (response :raw)) game-state)))
+    game-state))
 
 (defn challenge-opponent-if-present [response game-state network]
-  (let [opponent-to-challenge (game-state :opponent-to-challenge)]
-    (when opponent-to-challenge
-      (if (some #{opponent-to-challenge} (p/parse-player-list response))
-        (net/send-command network (str "spiel " opponent-to-challenge))
-        (do
-          (Thread/sleep 1000)
-          (net/send-command network "liste")
-          )))
-    game-state))
+  (when-let [opponent-to-challenge (game-state :opponent-to-challenge)]
+    (if (some #{opponent-to-challenge} (p/parse-player-list response))
+      (net/send-command network (str "spiel " opponent-to-challenge))
+      (do
+        (Thread/sleep 1000)
+        (net/send-command network "liste"))))
+  game-state)
 
 (defn handle-B-command [response game-state network]
   "B - success"
@@ -88,7 +88,7 @@
       (= (response :message) "Spiel startet") game-state
       (= (response :message) "disconnect") (do (net/shutdown-network network) game-state)
       (= (response :message) (str (game-state :botname) ", Sie sind angemeldet")) (do (net/send-command network "liste") (println "Waiting for game-state requests") game-state)
-      (= (response :message) (str (game-state :opponent-to-challenge) " akzeptiert")) game-state
+      (= (response :message) (str (game-state :opponent-to-challenge) " akzeptiert")) (assoc game-state :opponent-name (game-state :opponent-to-challenge))
       (str/starts-with? (response :message) "Folgende Spieler waeren bereit zu spielen:") (challenge-opponent-if-present response game-state network)
       :else (do (println "Unhandled Response: " response :raw) (net/send-command network "logout") game-state))
     (do (println "Unhandled Response: " (response :raw)) game-state)))
@@ -132,7 +132,7 @@
       :else (do (println "Unkown code" (response :code) "in Response:" (response :raw)) game-state))))
 
 (defn print-state-changes [game-state new-game-state]
-  (when (not= (new-game-state :board) (game-state :board))
+  (when-not (= (new-game-state :board) (game-state :board))
     (b/print-board (new-game-state :board))))
 
 (defn game-loop [root-game-state network sleep ki]

@@ -40,16 +40,15 @@
       nil)))
 
 (defn get-steine
-  ([board] "Liefert die Steine in der From {:owner \"b\" :x 2 :y 2 :augen 4} auf Board"
-   (filter #(some? (% :owner))
-           (flatten
-             (map-indexed (fn [y row]
-                            (map-indexed (fn [x feld]
-                                           (let [{owner :owner augen :augen} (parse-feld feld)]
-                                             {:owner owner :x x :y y :augen augen}))
-                                         row))
-                          board))
-           ))
+  ([board] "Liefert die Steine in der Form {:owner \"b\" :x 2 :y 2 :augen 4} auf dem Board"
+   (->> (map-indexed (fn [y row]
+                       (map-indexed (fn [x feld]
+                                      (let [{owner :owner augen :augen} (parse-feld feld)]
+                                        {:owner owner :x x :y y :augen augen}))
+                                    row))
+                     board)
+        (flatten)
+        (filter #(some? (% :owner)))))
   ([board owner] "Liefert die Steine eines Spielers"
    (filter #(= (% :owner) owner) (get-steine board))))
 
@@ -88,10 +87,10 @@
     (other-corner-reached board "b" bot-side) "b"
     (other-corner-reached board "o" opp-side) "o"))
 
-(def replacements {#"b"  "🤖"
-                   #"o"  "🤓"
-                   #"__" "⬜(_)"
-                   #"\d" "($0)"
+(def replacements {#"b"  "🔴"
+                   #"o"  "🔵"
+                   #"__" "⚪ (_)"
+                   #"\d" " ($0)"
                    })
 
 (defn print-board [board]
