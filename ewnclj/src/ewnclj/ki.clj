@@ -15,11 +15,11 @@
     c/top-player-setup
     c/bot-player-setup))
 
-(defn choose-move [game-state wuerfel]
-  "Returns a new Stein {:augen 5 :x 3 :y 2 }"
-  (let [board (game-state :board)
-        own-steine (b/get-steine board "b")
-        opp-steine (b/get-steine board "o")
-        moegliche-steine (u/moegliche-steine wuerfel own-steine)
-        moegliche-zuege (flatten (map #(u/moegliche-zuege (game-state :own-side) %) moegliche-steine))]
-    (first moegliche-zuege)))
+;(defn choose-move [game-state wuerfel]
+;  "Returns a new Stein {:augen 5 :x 3 :y 2 }"
+;  (let [board (game-state :board)
+;        own-steine (b/get-steine board "b")
+;        opp-steine (b/get-steine board "o")
+;        moegliche-steine (u/moegliche-steine wuerfel own-steine)
+;        moegliche-zuege (flatten (map #(u/moegliche-zuege (game-state :own-side) %) moegliche-steine))]
+;    (first moegliche-zuege)))

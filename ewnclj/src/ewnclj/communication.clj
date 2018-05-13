@@ -19,7 +19,7 @@
 (defn network-connected [network]
   (not (.isClosed (network :socket))))
 
-(defn connect [host]
+(defn setup-network [host]
   (let [socket (new Socket host 1078)
         out (new PrintWriter (.getOutputStream socket) true)
         br (new BufferedReader (new InputStreamReader (.getInputStream socket)))]
