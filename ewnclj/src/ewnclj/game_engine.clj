@@ -121,6 +121,10 @@
 (defn handle-E201-game-request-rejected-command [response game-state network]
   (do-shutdown game-state network))
 
+(defn handle-E301-move-timeout-command [response game-state network]
+  (println "Disqualifiziert weil die Antwort zu lange gedauert hat")
+  game-state)
+
 (defn handle-E302-idle-timeout-command [response game-state network]
   (net/shutdown-network network)
   game-state)
@@ -134,6 +138,7 @@
       "M" (handle-M-command response game-state network)
       "E001" (handle-E001-unkown-command response game-state network)
       "E201" (handle-E201-game-request-rejected-command response game-state network)
+      "E301" (handle-E301-move-timeout-command response game-state network)
       "E302" (handle-E302-idle-timeout-command response game-state network)
       "E102" (handle-E102-nick-in-used-command response game-state network)
       :else (do (println "Unkown code" (response :code) "in Response:" (response :raw)) game-state))))
