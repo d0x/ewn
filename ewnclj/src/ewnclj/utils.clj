@@ -1,5 +1,6 @@
 (ns ewnclj.utils
-  (:require [ewnclj.board :as b]))
+  (:require [ewnclj.board :as b]
+            [clojure.string :as str]))
 
 (defn augen [steine]
   (map #(% :augen) steine))
@@ -26,30 +27,124 @@
   (let [moegliche-augen (moegliche-augen wuerfel (augen steine))]
     (map #(find-stein % steine) moegliche-augen)))
 
-(defn- moegliche-zeuge-top-to-bottom [x y stein]
-  (let [right-ok (< x 4)
+(defn- moegliche-zuege-top-to-bottom [punkt]
+  (let [x (punkt :x)
+        y (punkt :y)
+        right-ok (< x 4)
         bottom-ok (< y 4)
         diagonal-ok (and right-ok bottom-ok)]
     (filter some?
-            [(if right-ok (assoc stein :x (inc x)) nil)
-             (if bottom-ok (assoc stein :y (inc y)) nil)
-             (if diagonal-ok (assoc stein :x (inc x) :y (inc y)) nil)]
+            [(if right-ok (assoc punkt :x (inc x)) nil)
+             (if bottom-ok (assoc punkt :y (inc y)) nil)
+             (if diagonal-ok (assoc punkt :x (inc x) :y (inc y)) nil)]
             )
     )
   )
 
-(defn- moegliche-zeuge-bottom-to-top [x y stein]
-  (let [left-ok (> x 0)
+(defn- moegliche-zuege-bottom-to-top [punkt]
+  (let [x (punkt :x)
+        y (punkt :y)
+        left-ok (> x 0)
         up-ok (> y 0)
         diagonal-ok (and left-ok up-ok)]
     (filter some?
-            [(if left-ok (assoc stein :x (dec x)) nil)
-             (if up-ok (assoc stein :y (dec y)) nil)
-             (if diagonal-ok (assoc stein :x (dec x) :y (dec y)) nil)]
+            [(if left-ok (assoc punkt :x (dec x)) nil)
+             (if up-ok (assoc punkt :y (dec y)) nil)
+             (if diagonal-ok (assoc punkt :x (dec x) :y (dec y)) nil)]
             )))
 
-(defn moegliche-zuege [root stein]
-  (let [{x :x y :y} stein]
-    (if (= root "t")
-      (moegliche-zeuge-top-to-bottom x y stein)
-      (moegliche-zeuge-bottom-to-top x y stein))))
+(defn moegliche-zug-ziele [root punkt]
+  (if (= root "t")
+    (moegliche-zuege-top-to-bottom punkt)
+    (moegliche-zuege-bottom-to-top punkt)))
+
+(defn moegliche-zuege-for-stein [root stein]
+  "Berechnet die Zuege in der Form: '({:from {:x 3, :y 3}, :to {:x 4, :y 3}}...)"
+  (->> (moegliche-zug-ziele root stein)
+       (map #(into {:from stein :to %}))))
+
+(defn moegliche-zuege [root steine]
+  "Berechnet die Zuege in der Form: '({:from {:x 3, :y 3}, :to {:x 4, :y 3}}...)"
+  (->> steine
+       (map (fn [stein] (->> (moegliche-zug-ziele root stein)
+                             (map #(into {:from stein :to %})))))
+       flatten))
+
+(defn zug-is-kanibalisch [board from to]
+  (->> [from to]
+       (map #(b/bget-stein board (% :x) (% :y)))
+       (map #(if (= nil %) "none" (% :owner)))
+       (apply =)
+       ))
+
+(defn zug-is-win [to]
+  (or (= (to :x) (to :y) 0)
+      (= (to :x) (to :y) 4)))
+
+(defn zug-is-kill [board from to]
+  (let [owners (->> [from to]
+                    (map #(b/bget-stein board (% :x) (% :y)))
+                    (map #(if (= nil %) nil (% :owner)))
+                    )]
+    (if (some nil? owners)
+      (apply not= owners)
+      false)
+    ))
+
+(defn stein-direct-enemy-count [board root player punkt]
+  (->> (moegliche-zug-ziele root punkt)
+       (map #(b/bget-stein board (% :x) (% :y)))
+       (filter some?)
+       (map #(% :owner))
+       (map #(not= % player))
+       (filter true?)
+       (count)
+       ))
+
+(defn zug-is-diagonal [from to]
+  (and (not= (from :x) (to :x))
+       (not= (from :y) (to :y))))
+
+(defn stein-is-on-diagonale [stein]
+  (= (stein :x) (stein :y)))
+
+(defn stein-is-obere-haelfte [stein]
+  (> (stein :x) (stein :y)))
+
+(defn stein-is-untere-haelfte [stein]
+  (< (stein :x) (stein :y)))
+
+(defn stein-is-spielfeld-rand [root stein]
+  (case root
+    "b" (or (= (stein :x) 0) (= (stein :y) 0))
+    "t" (or (= (stein :x) 4) (= (stein :y) 4))))
+
+(defn zug-is-shortes-path [root from to]
+  (if (zug-is-diagonal from to)
+    true
+    (if (stein-is-on-diagonale from)
+      false
+      (if (stein-is-obere-haelfte from)
+        (case root
+          "b" (> (from :x) (to :x))
+          "t" (< (from :y) (to :y))
+          )
+        (case root
+          "b" (> (from :y) (to :y))
+          "t" (< (from :x) (to :x))
+          )
+        ))
+    ))
+
+(defn side-to-icon [side]
+  (case side
+    nil " "
+    "t" "↘️"
+    "b" "↖️"))
+
+(defn trunc [s n]
+  (subs s 0 (min (count s) n)))
+
+(defn force-size [string max]
+  (let [trunced (trunc string max)]
+    (str trunced (str/join (map (fn [x] " ") (range (count trunced) max))))))

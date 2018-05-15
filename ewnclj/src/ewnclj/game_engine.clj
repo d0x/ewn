@@ -7,7 +7,9 @@
             [ewnclj.parser :as p]
             [ewnclj.communication :as net]
             [ewnclj.board :as b]
-            [clojure.core.match :refer (match)]))
+            [clojure.core.match :refer (match)]
+            [ewnclj.utils :as u]
+            [ewnclj.utils :as u]))
 
 ; ----- Acting to responses
 (defn do-own-startaufstellung [game-state network]
@@ -45,14 +47,18 @@
 (defn do-opp-move [game-state stein wuerfel network]
   ; TODO use wuerfel to prevent cheating!
   (send-quit-when-winner-found
-    (assoc game-state :board (b/move-stein (game-state :board) "o" stein))
+    (assoc game-state :board (b/place-stein (game-state :board) "o" stein))
     network))
 
 (defn do-own-move [game-state wuerfel network ki]
-  (let [stein ((ki :choose-move) game-state wuerfel)]
+  (let [stein ((ki :choose-move) (game-state :board) "b" (game-state :own-side) wuerfel)]
     (net/send-command network (str (stein :augen) (inc (stein :x)) (inc (stein :y))))
-    (let [new-board (b/move-stein (game-state :board) "b" stein)]
+    (let [new-board (b/place-stein (game-state :board) "b" stein)]
       (send-quit-when-winner-found (assoc game-state :board new-board) network))))
+
+(defn do-shutdown [game-state network]
+  (net/send-command network "logout") (net/shutdown-network network)
+  game-state)
 
 (defn handle-Z-command [response game-state network ki]
   (if-not (some? (game-state :winner))
@@ -90,7 +96,7 @@
       (= (response :message) (str (game-state :botname) ", Sie sind angemeldet")) (do (net/send-command network "liste") (println "Waiting for game-state requests") game-state)
       (= (response :message) (str (game-state :opponent-to-challenge) " akzeptiert")) (assoc game-state :opponent-name (game-state :opponent-to-challenge))
       (str/starts-with? (response :message) "Folgende Spieler waeren bereit zu spielen:") (challenge-opponent-if-present response game-state network)
-      :else (do (println "Unhandled Response: " response :raw) (net/send-command network "logout") game-state))
+      :else (do (println "Unhandled Response: " response :raw) (do-shutdown game-state network)))
     (do (println "Unhandled Response: " (response :raw)) game-state)))
 
 (defn handle-Q-command [response game-state network]
@@ -105,14 +111,15 @@
     (assoc game-state :botname new-name)))
 
 (defn handle-M-command [response game-state network]
-  game-state)
+  (if (and (= (response :message) "Spielende") (some? (game-state :opponent-to-challenge)))
+    (do-shutdown game-state network)
+    game-state))
 
 (defn handle-E001-unkown-command [response game-state network]
   game-state)
 
 (defn handle-E201-game-request-rejected-command [response game-state network]
-  (net/send-command network "logout") (net/shutdown-network network)
-  game-state)
+  (do-shutdown game-state network))
 
 (defn handle-E302-idle-timeout-command [response game-state network]
   (net/shutdown-network network)
@@ -133,7 +140,13 @@
 
 (defn print-state-changes [game-state new-game-state]
   (when-not (= (new-game-state :board) (game-state :board))
-    (b/print-board (new-game-state :board))))
+    (println "/============================================================\\")
+    (println "| Me :" (u/side-to-icon (game-state :own-side)) " 🔴 " (u/force-size (game-state :botname) 5) "|" (str/join (map #(str "🔴 (" (% :augen) ") ") (b/get-steine (new-game-state :board) "b"))))
+    (println "| Opp:" (u/side-to-icon (game-state :opponent-side)) " 🔵 " (u/force-size (game-state :opponent-name) 5) "|" (str/join (map #(str "🔵 (" (% :augen) ") ") (b/get-steine (new-game-state :board) "o"))))
+    (println "|------------------------------------------------------------|")
+    (b/print-board (new-game-state :board))
+    (println "\\============================================================/")
+    ))
 
 (defn game-loop [root-game-state network sleep ki]
   (loop [game-state root-game-state]

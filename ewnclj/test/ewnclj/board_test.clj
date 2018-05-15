@@ -14,11 +14,11 @@
 
 (deftest move-test
   (testing "Move stein"
-    (is (= (move-stein board "b" {:augen 4 :x 2 :y 2}) [["b3" "b2" "b6" "__" "__"]
-                                                        ["b5" "__" "__" "__" "__"]
-                                                        ["b1" "__" "b4" "__" "o1"]
-                                                        ["__" "__" "__" "o4" "o5"]
-                                                        ["__" "__" "o6" "o2" "o3"]]))))
+    (is (= (place-stein board "b" {:augen 4 :x 2 :y 2}) [["b3" "b2" "b6" "__" "__"]
+                                                         ["b5" "__" "__" "__" "__"]
+                                                         ["b1" "__" "b4" "__" "o1"]
+                                                         ["__" "__" "__" "o4" "o5"]
+                                                         ["__" "__" "o6" "o2" "o3"]]))))
 
 (deftest bset-test
   (testing "set board raw"
@@ -97,3 +97,17 @@
 (deftest print-board-test
   (testing "printboard"
     (is (= (print-board board)))))
+
+
+(deftest move-stein-test
+  (testing
+    (is (= (move-stein board {:x 0 :y 0} {:x 2 :y 2}) [["__" "b2" "b6" "__" "__"]
+                                                       ["b5" "b4" "__" "__" "__"]
+                                                       ["b1" "__" "b3" "__" "o1"]
+                                                       ["__" "__" "__" "o4" "o5"]
+                                                       ["__" "__" "o6" "o2" "o3"]]))
+    (is (= (move-stein board {:x 0 :y 0} {:x 1 :y 1}) [["__" "b2" "b6" "__" "__"]
+                                                       ["b5" "b3" "__" "__" "__"]
+                                                       ["b1" "__" "__" "__" "o1"]
+                                                       ["__" "__" "__" "o4" "o5"]
+                                                       ["__" "__" "o6" "o2" "o3"]]))))

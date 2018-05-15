@@ -20,8 +20,8 @@
                     [blank, blank, blank, blank, blank],
                     [blank, blank, blank, blank, blank]])
 
-(def initial-game-state {:botname initial-bot-name
+(def initial-game-state {:botname       initial-bot-name
                          :opponent-name nil
-                         :board initial-board
-                         :own-side nil
+                         :board         initial-board
+                         :own-side      nil
                          :opponent-side nil})

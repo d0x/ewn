@@ -5,14 +5,13 @@
             [ewnclj.utils :as u]
             [ewnclj.board :as b]))
 
-(defn- choose-move [game-state wuerfel]
+(defn choose-move [board player player-side wuerfel]
   "Returns a new Stein {:augen 5 :x 3 :y 2 }"
-  (let [board (game-state :board)
-        own-steine (b/get-steine board "b")
-        opp-steine (b/get-steine board "o")
-        moegliche-steine (u/moegliche-steine wuerfel own-steine)
-        moegliche-zuege (flatten (map #(u/moegliche-zuege (game-state :own-side) %) moegliche-steine))]
-    (first moegliche-zuege)))
-
+  (->> (u/moegliche-steine wuerfel (b/get-steine board player))
+       (map #(u/moegliche-zuege-for-stein player-side %))
+       (flatten)
+       (map #(into (% :to)))
+       (first)
+       ))
 
 (def ki {:choose-move choose-move})

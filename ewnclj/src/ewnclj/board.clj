@@ -30,11 +30,11 @@
                      (assoc board y new-row)))
   ([board owner stein] (bset board (stein :x) (stein :y) (str owner (stein :augen)))))
 
-(defn bget-field [board x y]
+(defn bget-field-value [board x y]
   (get-in board [x y]))
 
 (defn bget-stein [board x y]
-  (let [feld (parse-feld (bget-field board x y))]
+  (let [feld (parse-feld (bget-field-value board x y))]
     (if feld
       (assoc feld :x x :y y)
       nil)))
@@ -60,7 +60,16 @@
     (bset board (stein :x) (stein :y) c/blank)
     board))
 
-(defn move-stein [board owner stein]
+(defn move-stein [board from to]
+  "Setzt den wert von from auf to"
+  ( let [from-value  (bget-field-value board (from :x) (from :y))
+         temp-board (bset board (to :x) (to :y) from-value)
+         new-board (bset temp-board (from :x) (from :y) c/blank)]
+    new-board
+  ))
+
+(defn place-stein [board owner stein]
+  "Entfernt den stein von der alten position und setzt ihn auf die neue"
   (bset (remove-stein board (find-stein board owner (stein :augen)))
         owner
         stein))
@@ -95,6 +104,7 @@
 
 (defn print-board [board]
   (doseq [row board]
+    (print "| ")
     (doseq [field row]
       (print (reduce #(apply str/replace %1 %2) field replacements) " "))
     (println)))
