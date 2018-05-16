@@ -6,35 +6,35 @@
 (defn has-players [board]
   (some? (first (filter #(not= ewnclj.config/blank %) (flatten board)))))
 
-(defn parse-feld [feld]
-  (if (= feld c/blank)
-    nil
-    (let [[owner augen] (str/split feld #"")]
-      {:owner owner
-       :augen (Integer/parseInt augen)})))
-
 (defn is-top-half
   ([x y]
    "Gibt an ob der Punkt sich oben links befindet (die Diagonale zählt als top mit)"
    (<= (+ x y) 3))
-  ([stein]
-   (is-top-half (stein :x) (stein :y))))
+  ([{:keys [x y]}]
+   (is-top-half x y)))
 
-(defn get-startaufstellung-side [steine]
+(defn get-startaufstellung-side [{erster-stein 0}]
   "Prüft ob die übergebene Startaufstellung oben (t) oder unten (b) angeordnet ist"
-  (let [ersterStein (get steine 0)]
-    (if (is-top-half (ersterStein :x) (ersterStein :y)) "t" "b")))
+  (if (is-top-half (erster-stein :x) (erster-stein :y)) "t" "b"))
 
 (defn bset
   ([board x y val] (let [new-row (assoc (get board y) x val)]
                      (assoc board y new-row)))
-  ([board owner stein] (bset board (stein :x) (stein :y) (str owner (stein :augen)))))
+  ([board owner {:keys [x y augen]}] (bset board owner augen x y ))
+  ([board owner augen x y] (bset board x y (str owner augen))))
+
+(defn parse-field-value [field-value]
+  (if (= field-value c/blank)
+    nil
+    (let [[owner augen] (str/split field-value #"")]
+      {:owner owner
+       :augen (Integer/parseInt augen)})))
 
 (defn bget-field-value [board x y]
   (get-in board [x y]))
 
 (defn bget-stein [board x y]
-  (let [feld (parse-feld (bget-field-value board x y))]
+  (let [feld (parse-field-value (bget-field-value board x y))]
     (if feld
       (assoc feld :x x :y y)
       nil)))
@@ -43,8 +43,7 @@
   ([board] "Liefert die Steine in der Form {:owner \"b\" :x 2 :y 2 :augen 4} auf dem Board"
    (->> (map-indexed (fn [y row]
                        (map-indexed (fn [x feld]
-                                      (let [{owner :owner augen :augen} (parse-feld feld)]
-                                        {:owner owner :x x :y y :augen augen}))
+                                      (assoc (parse-field-value feld) :x x :y y))
                                     row))
                      board)
         (flatten)
@@ -55,24 +54,24 @@
 (defn find-stein [board owner augen]
   (some #(when (= (% :augen) augen) %) (get-steine board owner)))
 
-(defn remove-stein [board stein]
-  (if (some? stein)
-    (bset board (stein :x) (stein :y) c/blank)
+(defn remove-punkt [board {:keys [x y] :as punkt}]
+  (if (some? punkt)
+    (bset board x y c/blank)
     board))
 
 (defn move-stein [board from to]
   "Setzt den wert von from auf to"
-  ( let [from-value  (bget-field-value board (from :x) (from :y))
-         temp-board (bset board (to :x) (to :y) from-value)
-         new-board (bset temp-board (from :x) (from :y) c/blank)]
+  (let [from-value (bget-field-value board (from :x) (from :y))
+        temp-board (bset board (to :x) (to :y) from-value)
+        new-board (bset temp-board (from :x) (from :y) c/blank)]
     new-board
-  ))
+    ))
 
-(defn place-stein [board owner stein]
+(defn place-stein [board owner augen x y]
   "Entfernt den stein von der alten position und setzt ihn auf die neue"
-  (bset (remove-stein board (find-stein board owner (stein :augen)))
-        owner
-        stein))
+  (let [alter-stein (find-stein board owner augen)
+        board-ohne-alten-stein (remove-punkt board alter-stein)]
+    (bset board-ohne-alten-stein owner augen x y)))
 
 (defn has-steine [board owner]
   (not (empty? (get-steine board owner))))

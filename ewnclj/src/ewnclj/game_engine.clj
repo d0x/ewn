@@ -47,13 +47,13 @@
 (defn do-opp-move [game-state stein wuerfel network]
   ; TODO use wuerfel to prevent cheating!
   (send-quit-when-winner-found
-    (assoc game-state :board (b/place-stein (game-state :board) "o" stein))
+    (assoc game-state :board (b/place-stein (game-state :board) "o" (stein :augen) (stein :x) (stein :y)))
     network))
 
 (defn do-own-move [game-state wuerfel network ki]
   (let [stein ((ki :choose-move) (game-state :board) "b" (game-state :own-side) wuerfel)]
     (net/send-command network (str (stein :augen) (inc (stein :x)) (inc (stein :y))))
-    (let [new-board (b/place-stein (game-state :board) "b" stein)]
+    (let [new-board (b/place-stein (game-state :board) "b" (stein :augen) (stein :x) (stein :y))]
       (send-quit-when-winner-found (assoc game-state :board new-board) network))))
 
 (defn do-shutdown [game-state network]

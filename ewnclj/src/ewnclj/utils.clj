@@ -16,8 +16,7 @@
         (filter some? [next-smaller next-higher])
         ))))
 
-(defn find-first
-  [f coll]
+(defn find-first [f coll]
   (first (filter f coll)))
 
 (defn find-stein [augen steine]
@@ -105,19 +104,16 @@
   (and (not= (from :x) (to :x))
        (not= (from :y) (to :y))))
 
-(defn stein-is-on-diagonale [stein]
-  (= (stein :x) (stein :y)))
+(defn stein-is-on-diagonale [{:keys [x y]}] (= x y))
 
-(defn stein-is-obere-haelfte [stein]
-  (> (stein :x) (stein :y)))
+(defn stein-is-obere-haelfte [{:keys [x y]}] (> x y))
 
-(defn stein-is-untere-haelfte [stein]
-  (< (stein :x) (stein :y)))
+(defn stein-is-untere-haelfte [{:keys [x y]}] (< x y))
 
-(defn stein-is-spielfeld-rand [root stein]
+(defn stein-is-spielfeld-rand [root {:keys [x y]}]
   (case root
-    "b" (or (= (stein :x) 0) (= (stein :y) 0))
-    "t" (or (= (stein :x) 4) (= (stein :y) 4))))
+    "b" (or (= x 0) (= y 0))
+    "t" (or (= x 4) (= y 4))))
 
 (defn zug-is-shortes-path [root from to]
   (if (zug-is-diagonal from to)

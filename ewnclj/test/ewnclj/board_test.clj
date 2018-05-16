@@ -12,13 +12,13 @@
 
 (def empty-board c/initial-board)
 
-(deftest move-test
+(deftest place-stein-test
   (testing "Move stein"
-    (is (= (place-stein board "b" {:augen 4 :x 2 :y 2}) [["b3" "b2" "b6" "__" "__"]
-                                                         ["b5" "__" "__" "__" "__"]
-                                                         ["b1" "__" "b4" "__" "o1"]
-                                                         ["__" "__" "__" "o4" "o5"]
-                                                         ["__" "__" "o6" "o2" "o3"]]))))
+    (is (= (place-stein board "b" 4 2 2) [["b3" "b2" "b6" "__" "__"]
+                                          ["b5" "__" "__" "__" "__"]
+                                          ["b1" "__" "b4" "__" "o1"]
+                                          ["__" "__" "__" "o4" "o5"]
+                                          ["__" "__" "o6" "o2" "o3"]]))))
 
 (deftest bset-test
   (testing "set board raw"
@@ -37,8 +37,8 @@
 
 (deftest parse-feld-test
   (testing "parse feld"
-    (is (nil? (parse-feld c/blank)))
-    (is (= (parse-feld "b5") {:owner "b" :augen 5}))))
+    (is (nil? (parse-field-value c/blank)))
+    (is (= (parse-field-value "b5") {:owner "b" :augen 5}))))
 
 
 (deftest get-steine-test
@@ -64,9 +64,9 @@
 
 (deftest remove-stein-test
   (testing "einen stein vom spielfeld nehmen"
-    (is (= (remove-stein board nil) board))
-    (is (= (remove-stein empty-board {:x 2 :y 2 :augen 4}) empty-board))
-    (is (= (remove-stein [["__" "__" "__" "__" "__"]
+    (is (= (remove-punkt board nil) board))
+    (is (= (remove-punkt empty-board {:x 2 :y 2 :augen 4}) empty-board))
+    (is (= (remove-punkt [["__" "__" "__" "__" "__"]
                           ["__" "__" "__" "__" "__"]
                           ["__" "__" "b4" "__" "__"]
                           ["__" "__" "__" "__" "__"]
