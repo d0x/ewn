@@ -9,6 +9,12 @@
             ["__" "__" "__" "o4" "o5"]
             ["__" "__" "o6" "o2" "o3"]])
 
+(def close-board [["__" "b2" "b6" "__" "__"]
+                  ["__" "b5" "b4" "b3" "__"]
+                  ["__" "b1" "o1" "__" "__"]
+                  ["__" "__" "o4" "o5" "__"]
+                  ["__" "__" "o6" "o2" "o3"]])
+
 (deftest augen-test
   (testing "augen"
     (is (= (augen '()) ()))
@@ -64,15 +70,19 @@
 
 (deftest zug-is-kanibalisch-test
   (testing
+    (is (= (zug-is-kanibalisch close-board {:x 2 :y 2} {:x 1 :y 2}) false))
+    (is (= (zug-is-kanibalisch close-board {:x 2 :y 1} {:x 2 :y 2}) false))
     (is (= (zug-is-kanibalisch board {:x 0 :y 0} {:x 1 :y 1}) true))
     (is (= (zug-is-kanibalisch board {:x 0 :y 0} {:x 4 :y 4}) false))
-    (is (= (zug-is-kanibalisch board {:x 0 :y 0} {:x 2 :y 2}) false))))
-
+    (is (= (zug-is-kanibalisch board {:x 0 :y 0} {:x 2 :y 2}) false))
+    ))
 (deftest zug-is-kill-test
   (testing
+    (is (= (zug-is-kill close-board {:x 2 :y 2} {:x 1 :y 2}) true))
+    (is (= (zug-is-kill close-board {:x 2 :y 3} {:x 3 :y 3}) false))
     (is (= (zug-is-kill board {:x 0 :y 0} {:x 1 :y 1}) false))
-    (is (= (zug-is-kill board {:x 0 :y 0} {:x 4 :y 4}) false))
-    (is (= (zug-is-kill board {:x 0 :y 0} {:x 2 :y 2}) true))))
+    (is (= (zug-is-kill board {:x 0 :y 0} {:x 4 :y 4}) true))
+    (is (= (zug-is-kill board {:x 0 :y 0} {:x 2 :y 2}) false))))
 
 (deftest zug-is-win-test
   (testing

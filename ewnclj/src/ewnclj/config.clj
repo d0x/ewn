@@ -21,7 +21,8 @@
                     [blank, blank, blank, blank, blank]])
 
 (def initial-game-state {:botname       initial-bot-name
-                         :opponent-name nil
                          :board         initial-board
+                         :opponent-name nil
                          :own-side      nil
-                         :opponent-side nil})
+                         :opponent-side nil
+                         :auto-rematch  true})

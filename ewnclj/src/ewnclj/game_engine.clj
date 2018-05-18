@@ -37,12 +37,25 @@
       :board new-board)))
 
 (defn send-quit-when-winner-found [game-state network]
-  (let [potential-winner (b/get-winner (game-state :board) (game-state :own-side) (game-state :opponent-side))]
-    (when (some? potential-winner)
-      (println (if (= potential-winner "b") (game-state :botname) (game-state :opponent-name)) "hat gewonnen!")
-      (when (= "b" potential-winner)
-        (net/send-command network "quit")))
-    (assoc game-state :winner potential-winner)))
+  (let [potential-winner (b/get-winner (game-state :board) (game-state :own-side) (game-state :opponent-side))
+        winners-name (if (some? potential-winner)
+                       (if (= potential-winner "b")
+                         (game-state :botname)
+                         (game-state :opponent-name))
+                       nil)
+        winners-key (keyword winners-name)
+        wins (game-state :wins {})]
+    (if (some? potential-winner)
+      (do
+        (println winners-name "hat gewonnen!")
+        (when (= "b" potential-winner)
+          (net/send-command network "quit"))
+        (assoc game-state
+          :winner potential-winner
+          :wins (assoc wins
+                  winners-key (inc (winners-key wins 0)))
+          ))
+      game-state)))
 
 (defn do-opp-move [game-state stein wuerfel network]
   ; TODO use wuerfel to prevent cheating!
@@ -66,7 +79,7 @@
       (cond
         (= (response :message) "Sie sind am Zug") game-state
         (str/starts-with? (response :message) "Zug an ") game-state
-        (str/starts-with? (response :message) "Würfel: ") (if (:own-side game-state)
+        (str/starts-with? (response :message) "Würfel: ") (if (game-state :own-side)
                                                             (do-own-move game-state (Integer/parseInt (str/replace (response :message) "Würfel: " "")) network ki)
                                                             (do-own-startaufstellung game-state network))
         :else (do (println "Unhandled Response: " (response :raw)) game-state))
@@ -86,6 +99,14 @@
         (net/send-command network "liste"))))
   game-state)
 
+(defn clean-state [game-state]
+  (assoc game-state
+    :board c/initial-board
+    :own-side nil
+    :opponent-side nil
+    :opponent-name nil
+    :winner nil))
+
 (defn handle-B-command [response game-state network]
   "B - success"
   (if (= (:sender response) "Server")
@@ -94,7 +115,7 @@
       (= (response :message) "Spiel startet") game-state
       (= (response :message) "disconnect") (do (net/shutdown-network network) game-state)
       (= (response :message) (str (game-state :botname) ", Sie sind angemeldet")) (do (net/send-command network "liste") (println "Waiting for game-state requests") game-state)
-      (= (response :message) (str (game-state :opponent-to-challenge) " akzeptiert")) (assoc game-state :opponent-name (game-state :opponent-to-challenge))
+      (= (response :message) (str (game-state :opponent-to-challenge) " akzeptiert")) (assoc (clean-state game-state) :opponent-name (game-state :opponent-to-challenge))
       (str/starts-with? (response :message) "Folgende Spieler waeren bereit zu spielen:") (challenge-opponent-if-present response game-state network)
       :else (do (println "Unhandled Response: " response :raw) (do-shutdown game-state network)))
     (do (println "Unhandled Response: " (response :raw)) game-state)))
@@ -103,7 +124,7 @@
   "Akzeptiert jeden game-state Request"
   (let [opponent-name (p/parse-opponent-name response)]
     (net/send-command network "Ja")
-    (assoc c/initial-game-state :botname (game-state :botname) :opponent-name opponent-name)))
+    (assoc (clean-state game-state) :opponent-name opponent-name)))
 
 (defn handle-E102-nick-in-used-command [response game-state network]
   (let [new-name (ki/choose-next-nick-name (game-state :botname))]
@@ -111,9 +132,14 @@
     (assoc game-state :botname new-name)))
 
 (defn handle-M-command [response game-state network]
-  (if (and (= (response :message) "Spielende") (some? (game-state :opponent-to-challenge)))
-    (do-shutdown game-state network)
-    game-state))
+  (when (and (= (response :message) "Spielende") (some? (game-state :opponent-to-challenge)))
+    (if (game-state :auto-rematch)
+      (do
+        (println "Waiting to rechallange.")
+        (Thread/sleep 100)
+        (net/send-command network "liste"))
+      (do-shutdown game-state network)))
+  game-state)
 
 (defn handle-E001-unkown-command [response game-state network]
   game-state)
@@ -144,14 +170,17 @@
       :else (do (println "Unkown code" (response :code) "in Response:" (response :raw)) game-state))))
 
 (defn print-state-changes [game-state new-game-state]
-  (when-not (= (new-game-state :board) (game-state :board))
-    (println "/============================================================\\")
-    (println "| Me :" (u/side-to-icon (game-state :own-side)) " 🔴 " (u/force-size (game-state :botname) 5) "|" (str/join (map #(str "🔴 (" (% :augen) ") ") (b/get-steine (new-game-state :board) "b"))))
-    (println "| Opp:" (u/side-to-icon (game-state :opponent-side)) " 🔵 " (u/force-size (game-state :opponent-name) 5) "|" (str/join (map #(str "🔵 (" (% :augen) ") ") (b/get-steine (new-game-state :board) "o"))))
-    (println "|------------------------------------------------------------|")
-    (b/print-board (new-game-state :board))
-    (println "\\============================================================/")
-    ))
+  (when (some? (new-game-state :winner))
+    (when-not (= (new-game-state :board) (game-state :board))
+      ;(when (some? new-game-state)
+      (println "/============================================================\\")
+      (println "| Wins: " (new-game-state :wins))
+      (println "| Me :" (u/side-to-icon (new-game-state :own-side)) " 🔴 " (u/force-size (new-game-state :botname) 5) "|" (str/join (map #(str "🔴 (" (% :augen) ") ") (b/get-steine (new-game-state :board) "b"))))
+      (println "| Opp:" (u/side-to-icon (new-game-state :opponent-side)) " 🔵 " (u/force-size (new-game-state :opponent-name) 5) "|" (str/join (map #(str "🔵 (" (% :augen) ") ") (b/get-steine (new-game-state :board) "o"))))
+      (println "|------------------------------------------------------------|")
+      (b/print-board (new-game-state :board))
+      (println "\\============================================================/")
+      )))
 
 (defn game-loop [root-game-state network sleep ki]
   (loop [game-state root-game-state]

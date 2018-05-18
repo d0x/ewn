@@ -11,6 +11,7 @@
        (map #(u/moegliche-zuege-for-stein player-side %))
        (flatten)
        (map #(into (% :to)))
+       (shuffle)
        (first)
        ))
 

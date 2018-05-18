@@ -31,7 +31,7 @@
        :augen (Integer/parseInt augen)})))
 
 (defn bget-field-value [board x y]
-  (get-in board [x y]))
+  (get (get board y) x))
 
 (defn bget-stein [board x y]
   (let [feld (parse-field-value (bget-field-value board x y))]

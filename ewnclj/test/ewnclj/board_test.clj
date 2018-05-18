@@ -10,6 +10,12 @@
             ["__" "__" "__" "o4" "o5"]
             ["__" "__" "o6" "o2" "o3"]])
 
+(def close-board [["__" "b2" "b6" "__" "__"]
+                  ["__" "b5" "b4" "b3" "__"]
+                  ["__" "b1" "o1" "__" "__"]
+                  ["__" "__" "o4" "o5" "__"]
+                  ["__" "__" "o6" "o2" "o3"]])
+
 (def empty-board c/initial-board)
 
 (deftest place-stein-test
@@ -38,7 +44,8 @@
 (deftest parse-feld-test
   (testing "parse feld"
     (is (nil? (parse-field-value c/blank)))
-    (is (= (parse-field-value "b5") {:owner "b" :augen 5}))))
+    (is (= (parse-field-value "b5") {:owner "b" :augen 5}))
+    (is (= (parse-field-value "o2") {:owner "o" :augen 2}))))
 
 
 (deftest get-steine-test
@@ -81,8 +88,14 @@
     (is (= (has-steine empty-board "b") false))
     (is (= (has-steine empty-board "o") false))))
 
+(deftest bget-field-value-test
+  (testing
+    (is (= (bget-field-value close-board 2 2) "o1"))
+    (is (= (bget-field-value close-board 2 3) "o4"))))
+
 (deftest bget-stein-test
   (testing "get stein"
+    (is (= (bget-stein close-board 2 3) {:augen 4 :owner "o" :x 2 :y 3}))
     (is (= (bget-stein board 0 0) {:augen 3 :owner "b" :x 0 :y 0}))
     (is (= (bget-stein board 4 4) {:augen 3 :owner "o" :x 4 :y 4}))
     (is (= (bget-stein board 2 2) nil))))

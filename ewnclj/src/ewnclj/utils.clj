@@ -22,9 +22,11 @@
 (defn find-stein [augen steine]
   (find-first #(= augen (% :augen)) steine))
 
-(defn moegliche-steine [wuerfel steine]
-  (let [moegliche-augen (moegliche-augen wuerfel (augen steine))]
-    (map #(find-stein % steine) moegliche-augen)))
+(defn moegliche-steine
+  ([board player wuerfel]
+   (moegliche-steine wuerfel (b/get-steine board player)))
+  ([wuerfel steine] (let [moegliche-augen (moegliche-augen wuerfel (augen steine))]
+                      (map #(find-stein % steine) moegliche-augen))))
 
 (defn- moegliche-zuege-top-to-bottom [punkt]
   (let [x (punkt :x)
@@ -70,11 +72,11 @@
        flatten))
 
 (defn zug-is-kanibalisch [board from to]
-  (->> [from to]
-       (map #(b/bget-stein board (% :x) (% :y)))
-       (map #(if (= nil %) "none" (% :owner)))
-       (apply =)
-       ))
+  (let [owners (->> [from to]
+                    (map #(b/bget-stein board (% :x) (% :y)))
+                    (map #(if (some? %) (% :owner) "none")))]
+    (apply = owners)
+    ))
 
 (defn zug-is-win [to]
   (or (= (to :x) (to :y) 0)
@@ -83,12 +85,12 @@
 (defn zug-is-kill [board from to]
   (let [owners (->> [from to]
                     (map #(b/bget-stein board (% :x) (% :y)))
-                    (map #(if (= nil %) nil (% :owner)))
+                    (map #(if (some? %) (% :owner) nil))
                     )]
     (if (some nil? owners)
+      false
       (apply not= owners)
-      false)
-    ))
+      )))
 
 (defn stein-direct-enemy-count [board root player punkt]
   (->> (moegliche-zug-ziele root punkt)
@@ -142,5 +144,7 @@
   (subs s 0 (min (count s) n)))
 
 (defn force-size [string max]
-  (let [trunced (trunc string max)]
-    (str trunced (str/join (map (fn [x] " ") (range (count trunced) max))))))
+  (if (some? string)
+    (let [trunced (trunc string max)]
+      (str trunced (str/join (map (fn [x] " ") (range (count trunced) max)))))
+    (str/join (map (fn [x] " ") (range max)))))
