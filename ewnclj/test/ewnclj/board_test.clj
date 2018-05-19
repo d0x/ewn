@@ -20,32 +20,30 @@
 
 (deftest place-stein-test
   (testing "Move stein"
-    (is (= (place-stein board "b" 4 2 2) [["b3" "b2" "b6" "__" "__"]
-                                          ["b5" "__" "__" "__" "__"]
-                                          ["b1" "__" "b4" "__" "o1"]
-                                          ["__" "__" "__" "o4" "o5"]
-                                          ["__" "__" "o6" "o2" "o3"]]))))
+    (is (= (place-stein board :bot 4 2 2) [["b3" "b2" "b6" "__" "__"]
+                                           ["b5" "__" "__" "__" "__"]
+                                           ["b1" "__" "b4" "__" "o1"]
+                                           ["__" "__" "__" "o4" "o5"]
+                                           ["__" "__" "o6" "o2" "o3"]]))))
 
 (deftest bset-test
   (testing "set board raw"
-    (is (= (bset empty-board 1 0 "test") [["__" "test" "__" "__" "__"]
-                                          ["__" "__" "__" "__" "__"]
-                                          ["__" "__" "__" "__" "__"]
-                                          ["__" "__" "__" "__" "__"]
-                                          ["__" "__" "__" "__" "__"]])))
-
-  (testing "set board with stein"
-    (is (= (bset empty-board "b" {:augen 4 :x 2 :y 2}) [["__" "__" "__" "__" "__"]
-                                                        ["__" "__" "__" "__" "__"]
-                                                        ["__" "__" "b4" "__" "__"]
-                                                        ["__" "__" "__" "__" "__"]
-                                                        ["__" "__" "__" "__" "__"]]))))
+    (is (= (bset-field-value empty-board 1 0 "test") [["__" "test" "__" "__" "__"]
+                                                      ["__" "__" "__" "__" "__"]
+                                                      ["__" "__" "__" "__" "__"]
+                                                      ["__" "__" "__" "__" "__"]
+                                                      ["__" "__" "__" "__" "__"]])))
+  (is (= (bset empty-board :bot {:augen 4 :x 2 :y 2}) [["__" "__" "__" "__" "__"]
+                                                       ["__" "__" "__" "__" "__"]
+                                                       ["__" "__" "b4" "__" "__"]
+                                                       ["__" "__" "__" "__" "__"]
+                                                       ["__" "__" "__" "__" "__"]])))
 
 (deftest parse-feld-test
   (testing "parse feld"
     (is (nil? (parse-field-value c/blank)))
-    (is (= (parse-field-value "b5") {:owner "b" :augen 5}))
-    (is (= (parse-field-value "o2") {:owner "o" :augen 2}))))
+    (is (= (parse-field-value "b5") {:owner :bot :augen 5}))
+    (is (= (parse-field-value "o2") {:owner :opponent :augen 2}))))
 
 
 (deftest get-steine-test
@@ -56,7 +54,7 @@
                         ["__" "__" "b4" "__" "__"]
                         ["__" "__" "__" "__" "__"]
                         ["__" "__" "__" "__" "__"]])
-           '({:owner "b" :x 2 :y 2 :augen 4})))))
+           '({:owner :bot :x 2 :y 2 :augen 4})))))
 
 (deftest find-stein-test
   (testing "einen bestimmten stein suchen"
@@ -66,8 +64,8 @@
                         ["__" "__" "b4" "__" "__"]
                         ["__" "__" "__" "__" "__"]
                         ["__" "__" "__" "__" "__"]],
-                       "b" 4)
-           {:owner "b" :x 2 :y 2 :augen 4}))))
+                       :bot 4)
+           {:owner :bot :x 2 :y 2 :augen 4}))))
 
 (deftest remove-stein-test
   (testing "einen stein vom spielfeld nehmen"
@@ -83,10 +81,10 @@
 
 (deftest has-steine-test
   (testing "has steine"
-    (is (= (has-steine board "b") true))
-    (is (= (has-steine board "o") true))
-    (is (= (has-steine empty-board "b") false))
-    (is (= (has-steine empty-board "o") false))))
+    (is (= (has-steine board :bot) true))
+    (is (= (has-steine board :opponent) true))
+    (is (= (has-steine empty-board :bot) false))
+    (is (= (has-steine empty-board :opponent) false))))
 
 (deftest bget-field-value-test
   (testing
@@ -95,17 +93,17 @@
 
 (deftest bget-stein-test
   (testing "get stein"
-    (is (= (bget-stein close-board 2 3) {:augen 4 :owner "o" :x 2 :y 3}))
-    (is (= (bget-stein board 0 0) {:augen 3 :owner "b" :x 0 :y 0}))
-    (is (= (bget-stein board 4 4) {:augen 3 :owner "o" :x 4 :y 4}))
-    (is (= (bget-stein board 2 2) nil))))
+    (is (= (bget close-board 2 3) {:augen 4 :owner :opponent :x 2 :y 3}))
+    (is (= (bget board 0 0) {:augen 3 :owner :bot :x 0 :y 0}))
+    (is (= (bget board 4 4) {:augen 3 :owner :opponent :x 4 :y 4}))
+    (is (= (bget board 2 2) nil))))
 
 (deftest other-corner-reached-test
   (testing "other-corner"
-    (is (= (other-corner-reached board "b" "t") false))
-    (is (= (other-corner-reached board "b" "b") true))
-    (is (= (other-corner-reached board "o" "b") false))
-    (is (= (other-corner-reached board "o" "t") true))))
+    (is (= (other-corner-reached board :bot "↘️") false))
+    (is (= (other-corner-reached board :bot :bot) true))
+    (is (= (other-corner-reached board :opponent :bot) false))
+    (is (= (other-corner-reached board :opponent "↘️") true))))
 
 (deftest print-board-test
   (testing "printboard"
@@ -124,3 +122,4 @@
                                                        ["b1" "__" "__" "__" "o1"]
                                                        ["__" "__" "__" "o4" "o5"]
                                                        ["__" "__" "o6" "o2" "o3"]]))))
+

@@ -18,7 +18,7 @@
         steine (p/parse-aufstellung aufstellung)
         new-board (reduce
                     (fn [board stein]
-                      (b/bset board (stein :x) (stein :y) (str "b" (stein :augen))))
+                      (b/bset board :bot (stein :augen) (stein :x) (stein :y)))
                     (game-state :board) steine)]
     (net/send-command network aufstellung)
     (assoc game-state
@@ -30,7 +30,7 @@
         opponent-side (if (b/is-top-half (get steine 0)) "↘️" "↖️")
         new-board (reduce
                     (fn [board stein]
-                      (b/bset board (stein :x) (stein :y) (str "o" (stein :augen))))
+                      (b/bset board :opponent (stein :augen) (stein :x) (stein :y)))
                     (game-state :board) steine)]
     (assoc game-state
       :opponent-side opponent-side
@@ -39,7 +39,7 @@
 (defn send-quit-when-winner-found [game-state network]
   (let [potential-winner (b/get-winner (game-state :board) (game-state :own-side) (game-state :opponent-side))
         winners-name (if (some? potential-winner)
-                       (if (= potential-winner "b")
+                       (if (= potential-winner :bot)
                          (game-state :botname)
                          (game-state :opponent-name))
                        nil)
@@ -48,7 +48,7 @@
     (if (some? potential-winner)
       (do
         (println winners-name "hat gewonnen!")
-        (when (= "b" potential-winner)
+        (when (= potential-winner :bot)
           (net/send-command network "quit"))
         (assoc game-state
           :winner potential-winner
@@ -60,13 +60,13 @@
 (defn do-opp-move [game-state stein wuerfel network]
   ; TODO use wuerfel to prevent cheating!
   (send-quit-when-winner-found
-    (assoc game-state :board (b/place-stein (game-state :board) "o" (stein :augen) (stein :x) (stein :y)))
+    (assoc game-state :board (b/place-stein (game-state :board) :opponent (stein :augen) (stein :x) (stein :y)))
     network))
 
 (defn do-own-move [game-state wuerfel network ki]
-  (let [stein ((ki :choose-move) (game-state :board) "b" (game-state :own-side) wuerfel)]
+  (let [stein ((ki :choose-move) (game-state :board) :bot (game-state :own-side) wuerfel)]
     (net/send-command network (str (stein :augen) (inc (stein :x)) (inc (stein :y))))
-    (let [new-board (b/place-stein (game-state :board) "b" (stein :augen) (stein :x) (stein :y))]
+    (let [new-board (b/place-stein (game-state :board) :bot (stein :augen) (stein :x) (stein :y))]
       (send-quit-when-winner-found (assoc game-state :board new-board) network))))
 
 (defn do-shutdown [game-state network]
@@ -175,8 +175,8 @@
       ;(when (some? new-game-state)
       (println "/============================================================\\")
       (println "| Wins: " (new-game-state :wins))
-      (println "| Me :" (u/side-to-icon (new-game-state :own-side)) " 🔴 " (u/force-size (new-game-state :botname) 5) "|" (str/join (map #(str "🔴 (" (% :augen) ") ") (b/get-steine (new-game-state :board) "b"))))
-      (println "| Opp:" (u/side-to-icon (new-game-state :opponent-side)) " 🔵 " (u/force-size (new-game-state :opponent-name) 5) "|" (str/join (map #(str "🔵 (" (% :augen) ") ") (b/get-steine (new-game-state :board) "o"))))
+      (println "| Me :" (u/side-to-icon (new-game-state :own-side)) " 🔴 " (u/force-size (new-game-state :botname) 5) "|" (str/join (map #(str "🔴 (" (% :augen) ") ") (b/get-steine (new-game-state :board) :bot))))
+      (println "| Opp:" (u/side-to-icon (new-game-state :opponent-side)) " 🔵 " (u/force-size (new-game-state :opponent-name) 5) "|" (str/join (map #(str "🔵 (" (% :augen) ") ") (b/get-steine (new-game-state :board) :opponent))))
       (println "|------------------------------------------------------------|")
       (b/print-board (new-game-state :board))
       (println "\\============================================================/")

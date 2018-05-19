@@ -73,7 +73,7 @@
 
 (defn zug-is-kanibalisch [board from to]
   (let [owners (->> [from to]
-                    (map #(b/bget-stein board (% :x) (% :y)))
+                    (map #(b/bget board (% :x) (% :y)))
                     (map #(if (some? %) (% :owner) "none")))]
     (apply = owners)
     ))
@@ -84,7 +84,7 @@
 
 (defn zug-is-kill [board from to]
   (let [owners (->> [from to]
-                    (map #(b/bget-stein board (% :x) (% :y)))
+                    (map #(b/bget board (% :x) (% :y)))
                     (map #(if (some? %) (% :owner) nil))
                     )]
     (if (some nil? owners)
@@ -94,7 +94,7 @@
 
 (defn stein-direct-enemy-count [board root player punkt]
   (->> (moegliche-zug-ziele root punkt)
-       (map #(b/bget-stein board (% :x) (% :y)))
+       (map #(b/bget board (% :x) (% :y)))
        (filter some?)
        (map #(% :owner))
        (map #(not= % player))

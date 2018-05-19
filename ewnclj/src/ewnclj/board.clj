@@ -1,7 +1,8 @@
 (ns ewnclj.board
   (:require [clojure.string :as str]
             [ewnclj.config :as c]
-            [ewnclj.parser :as p]))
+            [ewnclj.parser :as p]
+            [clojure.set :refer [map-invert]]))
 
 (defn has-players [board]
   (some? (first (filter #(not= ewnclj.config/blank %) (flatten board)))))
@@ -17,23 +18,29 @@
   "Prüft ob die übergebene Startaufstellung oben (↘️) oder unten (↖️) angeordnet ist"
   (if (is-top-half (erster-stein :x) (erster-stein :y)) "↘️" "↖️"))
 
-(defn bset
-  ([board x y val] (let [new-row (assoc (get board y) x val)]
-                     (assoc board y new-row)))
-  ([board owner {:keys [x y augen]}] (bset board owner augen x y ))
-  ([board owner augen x y] (bset board x y (str owner augen))))
+(def board-player-mapping {:bot      "b"
+                           :opponent "o"})
+(def board-value-mapping (map-invert board-player-mapping))
+
+(defn bget-field-value [board x y]
+  (get-in board [y x]))
+
+(defn bset-field-value [board x y val]
+  (assoc-in board [y x] val))
 
 (defn parse-field-value [field-value]
   (if (= field-value c/blank)
     nil
     (let [[owner augen] (str/split field-value #"")]
-      {:owner owner
+      {:owner (board-value-mapping owner)
        :augen (Integer/parseInt augen)})))
 
-(defn bget-field-value [board x y]
-  (get (get board y) x))
 
-(defn bget-stein [board x y]
+(defn bset
+  ([board owner augen x y] (bset-field-value board x y (str (board-player-mapping owner) augen)))
+  ([board owner {:keys [x y augen] :as stein}] (bset board owner augen x y)))
+
+(defn bget [board x y]
   (let [feld (parse-field-value (bget-field-value board x y))]
     (if feld
       (assoc feld :x x :y y)
@@ -56,14 +63,14 @@
 
 (defn remove-punkt [board {:keys [x y] :as punkt}]
   (if (some? punkt)
-    (bset board x y c/blank)
+    (bset-field-value board x y c/blank)
     board))
 
 (defn move-stein [board from to]
   "Setzt den wert von from auf to"
   (let [from-value (bget-field-value board (from :x) (from :y))
-        temp-board (bset board (to :x) (to :y) from-value)
-        new-board (bset temp-board (from :x) (from :y) c/blank)]
+        temp-board (bset-field-value board (to :x) (to :y) from-value)
+        new-board (remove-punkt temp-board from)]
     new-board
     ))
 
@@ -78,11 +85,11 @@
 
 (defn other-corner-reached [board who start-side]
   (if (= start-side "↘️")
-    (let [stein (bget-stein board 4 4)]
+    (let [stein (bget board 4 4)]
       (if (some? stein)
         (= (stein :owner) who)
         false))
-    (let [stein (bget-stein board 0 0)]
+    (let [stein (bget board 0 0)]
       (if stein
         (= (stein :owner) who)
         false))
@@ -90,10 +97,10 @@
 
 (defn get-winner [board bot-side opp-side]
   (cond
-    (not (has-steine board "b")) "o"
-    (not (has-steine board "o")) "b"
-    (other-corner-reached board "b" bot-side) "b"
-    (other-corner-reached board "o" opp-side) "o"))
+    (not (has-steine board :bot)) :opponent
+    (not (has-steine board :opponent)) :bot
+    (other-corner-reached board :bot bot-side) :bot
+    (other-corner-reached board :opponent opp-side) :opponent))
 
 (def replacements {#"b"  "🔴"
                    #"o"  "🔵"
