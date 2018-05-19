@@ -11,7 +11,7 @@
        (inc (Integer/parseInt (or (re-find #"\d+" name) "0")))))
 
 (defn choose-startaufstellung [game-state own-side]
-  (if (= own-side "t")
+  (if (= own-side "↘️")
     c/top-player-setup
     c/bot-player-setup))
 

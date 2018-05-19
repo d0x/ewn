@@ -54,8 +54,8 @@
              (if diagonal-ok (assoc punkt :x (dec x) :y (dec y)) nil)]
             )))
 
-(defn moegliche-zug-ziele [root punkt]
-  (if (= root "t")
+(defn moegliche-zug-ziele [side punkt]
+  (if (= side "↘️")
     (moegliche-zuege-top-to-bottom punkt)
     (moegliche-zuege-bottom-to-top punkt)))
 
@@ -112,24 +112,24 @@
 
 (defn stein-is-untere-haelfte [{:keys [x y]}] (< x y))
 
-(defn stein-is-spielfeld-rand [root {:keys [x y]}]
-  (case root
-    "b" (or (= x 0) (= y 0))
-    "t" (or (= x 4) (= y 4))))
+(defn stein-is-spielfeld-rand [side {:keys [x y]}]
+  (case side
+    "↖️" (or (= x 0) (= y 0))
+    "↘️" (or (= x 4) (= y 4))))
 
-(defn zug-is-shortes-path [root from to]
+(defn zug-is-shortes-path [side from to]
   (if (zug-is-diagonal from to)
     true
     (if (stein-is-on-diagonale from)
       false
       (if (stein-is-obere-haelfte from)
-        (case root
-          "b" (> (from :x) (to :x))
-          "t" (< (from :y) (to :y))
+        (case side
+          "↖️" (> (from :x) (to :x))
+          "↘️" (< (from :y) (to :y))
           )
-        (case root
-          "b" (> (from :y) (to :y))
-          "t" (< (from :x) (to :x))
+        (case side
+          "↖️" (> (from :y) (to :y))
+          "↘️" (< (from :x) (to :x))
           )
         ))
     ))
@@ -137,8 +137,8 @@
 (defn side-to-icon [side]
   (case side
     nil " "
-    "t" "↘️"
-    "b" "↖️"))
+    "↘️" "↘️"
+    "↖️" "↖️"))
 
 (defn trunc [s n]
   (subs s 0 (min (count s) n)))

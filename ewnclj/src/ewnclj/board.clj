@@ -14,8 +14,8 @@
    (is-top-half x y)))
 
 (defn get-startaufstellung-side [{erster-stein 0}]
-  "Prüft ob die übergebene Startaufstellung oben (t) oder unten (b) angeordnet ist"
-  (if (is-top-half (erster-stein :x) (erster-stein :y)) "t" "b"))
+  "Prüft ob die übergebene Startaufstellung oben (↘️) oder unten (↖️) angeordnet ist"
+  (if (is-top-half (erster-stein :x) (erster-stein :y)) "↘️" "↖️"))
 
 (defn bset
   ([board x y val] (let [new-row (assoc (get board y) x val)]
@@ -77,7 +77,7 @@
   (not (empty? (get-steine board owner))))
 
 (defn other-corner-reached [board who start-side]
-  (if (= start-side "t")
+  (if (= start-side "↘️")
     (let [stein (bget-stein board 4 4)]
       (if (some? stein)
         (= (stein :owner) who)

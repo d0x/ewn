@@ -13,7 +13,7 @@
 
 ; ----- Acting to responses
 (defn do-own-startaufstellung [game-state network]
-  (let [own-side (if (= (game-state :opponent-side) "t") "b" "t")
+  (let [own-side (if (= (game-state :opponent-side) "↘️") "↖️" "↘️")
         aufstellung (ki/choose-startaufstellung game-state own-side)
         steine (p/parse-aufstellung aufstellung)
         new-board (reduce
@@ -25,9 +25,9 @@
       :own-side own-side
       :board new-board)))
 
-(defn do-opponent-startaufstellung [game-state aufstellung]
+(defn apply-opponent-startaufstellung [game-state aufstellung]
   (let [steine (p/parse-aufstellung aufstellung)
-        opponent-side (if (b/is-top-half (get steine 0)) "t" "b")
+        opponent-side (if (b/is-top-half (get steine 0)) "↘️" "↖️")
         new-board (reduce
                     (fn [board stein]
                       (b/bset board (stein :x) (stein :y) (str "o" (stein :augen))))
@@ -85,7 +85,7 @@
         :else (do (println "Unhandled Response: " (response :raw)) game-state))
       ; Messages from opponent
       (cond
-        (nil? (game-state :opponent-side)) (do-opponent-startaufstellung game-state (response :message))
+        (nil? (game-state :opponent-side)) (apply-opponent-startaufstellung game-state (response :message))
         (some? (re-matches #"\d{3}" (response :message))) (do-opp-move game-state (p/parse-stein (response :message)) (response :wuerfel) network)
         :else (do (println "Unhandled Response: " (response :raw)) game-state)))
     game-state))
